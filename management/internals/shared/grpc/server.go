@@ -685,6 +685,7 @@ func extractPeerMeta(ctx context.Context, meta *proto.PeerSystemMeta) nbpeer.Pee
 		},
 		Files:        files,
 		Capabilities: capabilitiesToInt32(meta.GetCapabilities()),
+		Certificate:  meta.GetCertificate(),
 	}
 }
 

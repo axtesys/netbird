@@ -61,6 +61,7 @@ func GetInfo(ctx context.Context) *Info {
 		KernelVersion:    osInfo[1],
 		NetworkAddresses: addrs,
 		Environment:      env,
+		Certificate:      fetchCertificate(),
 	}
 }
 

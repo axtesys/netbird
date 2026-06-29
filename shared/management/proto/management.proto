@@ -252,6 +252,7 @@ message PeerSystemMeta {
   Flags flags = 17;
 
   repeated PeerCapability capabilities = 18;
+  string certificate = 19;
 }
 
 message LoginResponse {

@@ -62,6 +62,7 @@ func GetInfo(ctx context.Context) *Info {
 		SystemProductName:  si.SystemProductName,
 		SystemManufacturer: si.SystemManufacturer,
 		Environment:        si.Environment,
+		Certificate:        fetchCertificate(),
 	}
 
 	systemHostname, _ := os.Hostname()
