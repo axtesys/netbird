@@ -2,7 +2,7 @@ name: Check License Dependencies
 
 on:
   push:
-    branches: [main]
+    branches: [main, axtesys/main, axtesys/patches, feature/posture-certificate, feature/native-acl-overwrite]
     paths:
       - "go.mod"
       - "go.sum"
