@@ -395,9 +395,14 @@ jobs:
           retention-days: 3
 
   test_windows_installer:
-    name: "Windows Installer / Build Test"
+    name: "Windows Installer / Build & Publish"
     runs-on: windows-2022
     needs: [release, release_ui]
+    # AXTESYS CHANGE: on tag builds this job uploads the NSIS .exe and WiX .msi
+    # to the GitHub release (mirrored to Pulp at /pkgs/windows/{arch}/), so it
+    # needs write access to release assets like the release job above.
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -517,7 +522,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "makensis failed with exit code $LASTEXITCODE" }
 
       - name: Rename NSIS installer
-        run: mv netbird-installer.exe netbird_installer_test_windows_${{ matrix.arch }}.exe
+        run: mv netbird-installer.exe netbird-installer_windows_${{ matrix.arch }}.exe
 
       - name: Install WiX
         run: |
@@ -527,17 +532,32 @@ jobs:
       - name: Build MSI installer
         env:
           NETBIRD_VERSION: "${{ steps.semver_parser.outputs.fullversion }}"
-        run: wix build -arch ${{ matrix.arch == 'amd64' && 'x64' || 'arm64' }} -ext WixToolset.Util.wixext -o netbird_installer_test_windows_${{ matrix.arch }}.msi .\client\netbird.wxs -d ProcessorArchitecture=${{ matrix.arch == 'amd64' && 'x64' || 'arm64' }} -d ArchSuffix=${{ matrix.arch }}
+        run: wix build -arch ${{ matrix.arch == 'amd64' && 'x64' || 'arm64' }} -ext WixToolset.Util.wixext -o netbird-installer_windows_${{ matrix.arch }}.msi .\client\netbird.wxs -d ProcessorArchitecture=${{ matrix.arch == 'amd64' && 'x64' || 'arm64' }} -d ArchSuffix=${{ matrix.arch }}
 
       - name: Upload installer artifacts
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
         with:
-          name: windows-installer-test-${{ matrix.arch }}
+          name: windows-installer-${{ matrix.arch }}
           path: |
-            netbird_installer_test_windows_${{ matrix.arch }}.exe
-            netbird_installer_test_windows_${{ matrix.arch }}.msi
+            netbird-installer_windows_${{ matrix.arch }}.exe
+            netbird-installer_windows_${{ matrix.arch }}.msi
           retention-days: 3
+
+      # AXTESYS CHANGE: on tag builds, publish the installers to the GitHub
+      # release created by the release job (this job needs it). The internal
+      # GitHub->Pulp mirror then serves them at /pkgs/windows/{arch}/, matching
+      # the dashboard Windows setup tab.
+      - name: Publish installers to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.ref_name }}" `
+            "netbird-installer_windows_${{ matrix.arch }}.exe" `
+            "netbird-installer_windows_${{ matrix.arch }}.msi" `
+            --clobber
 
   comment_release_artifacts:
     name: Comment release artifacts
