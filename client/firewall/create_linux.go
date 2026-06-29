@@ -35,11 +35,11 @@ const SKIP_NFTABLES_ENV = "NB_SKIP_NFTABLES_CHECK"
 // FWType is the type for the firewall type
 type FWType int
 
-func NewFirewall(iface IFaceMapper, stateManager *statemanager.Manager, flowLogger nftypes.FlowLogger, disableServerRoutes bool, mtu uint16) (firewall.Manager, error) {
+func NewFirewall(iface IFaceMapper, stateManager *statemanager.Manager, flowLogger nftypes.FlowLogger, disableServerRoutes bool, alwaysUseFirewall bool, mtu uint16) (firewall.Manager, error) {
 	// We run in userspace mode and force userspace firewall was requested. We don't attempt native firewall.
 	if iface.IsUserspaceBind() && forceUserspaceFirewall() {
 		log.Info("forcing userspace firewall")
-		return createUserspaceFirewall(iface, nil, disableServerRoutes, flowLogger, mtu)
+		return createUserspaceFirewall(iface, nil, disableServerRoutes, alwaysUseFirewall, flowLogger, mtu)
 	}
 
 	// Use native firewall for either kernel or userspace, the interface appears identical to netfilter
@@ -53,7 +53,7 @@ func NewFirewall(iface IFaceMapper, stateManager *statemanager.Manager, flowLogg
 	// Fall back to the userspace packet filter if native is unavailable
 	if err != nil {
 		log.Warnf("failed to create native firewall: %v. Proceeding with userspace", err)
-		return createUserspaceFirewall(iface, nil, disableServerRoutes, flowLogger, mtu)
+		return createUserspaceFirewall(iface, nil, disableServerRoutes, alwaysUseFirewall, flowLogger, mtu)
 	}
 
 	// Native firewall handles packet filtering, but the userspace WireGuard bind
@@ -93,12 +93,12 @@ func createFW(iface IFaceMapper, mtu uint16) (firewall.Manager, error) {
 	}
 }
 
-func createUserspaceFirewall(iface IFaceMapper, fm firewall.Manager, disableServerRoutes bool, flowLogger nftypes.FlowLogger, mtu uint16) (firewall.Manager, error) {
+func createUserspaceFirewall(iface IFaceMapper, fm firewall.Manager, disableServerRoutes bool, alwaysUseFirewall bool, flowLogger nftypes.FlowLogger, mtu uint16) (firewall.Manager, error) {
 	var errUsp error
 	if fm != nil {
-		fm, errUsp = uspfilter.CreateWithNativeFirewall(iface, fm, disableServerRoutes, flowLogger, mtu)
+		fm, errUsp = uspfilter.CreateWithNativeFirewall(iface, fm, disableServerRoutes, alwaysUseFirewall, flowLogger, mtu)
 	} else {
-		fm, errUsp = uspfilter.Create(iface, disableServerRoutes, flowLogger, mtu)
+		fm, errUsp = uspfilter.Create(iface, disableServerRoutes, alwaysUseFirewall, flowLogger, mtu)
 	}
 
 	if errUsp != nil {

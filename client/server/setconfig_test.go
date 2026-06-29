@@ -72,6 +72,7 @@ func TestSetConfig_AllFieldsSaved(t *testing.T) {
 	lazyConnectionEnabled := true
 	blockInbound := true
 	disableIPv6 := true
+	alwaysUseFirewall := true
 	mtu := int64(1280)
 	sshJWTCacheTTL := int32(300)
 
@@ -97,6 +98,7 @@ func TestSetConfig_AllFieldsSaved(t *testing.T) {
 		LazyConnectionEnabled: &lazyConnectionEnabled,
 		BlockInbound:          &blockInbound,
 		DisableIpv6:           &disableIPv6,
+		AlwaysUseFirewall:     &alwaysUseFirewall,
 		NatExternalIPs:        []string{"1.2.3.4", "5.6.7.8"},
 		CleanNATExternalIPs:   false,
 		CustomDNSAddress:      []byte("1.1.1.1:53"),
@@ -143,6 +145,7 @@ func TestSetConfig_AllFieldsSaved(t *testing.T) {
 	require.Equal(t, lazyConnectionEnabled, cfg.LazyConnectionEnabled)
 	require.Equal(t, blockInbound, cfg.BlockInbound)
 	require.Equal(t, disableIPv6, cfg.DisableIPv6)
+	require.Equal(t, alwaysUseFirewall, cfg.AlwaysUseFirewall)
 	require.Equal(t, []string{"1.2.3.4", "5.6.7.8"}, cfg.NATExternalIPs)
 	require.Equal(t, "1.1.1.1:53", cfg.CustomDNSAddress)
 	// IFaceBlackList contains defaults + extras
@@ -193,6 +196,7 @@ func verifyAllFieldsCovered(t *testing.T, req *proto.SetConfigRequest) {
 		"LazyConnectionEnabled":         true,
 		"BlockInbound":                  true,
 		"DisableIpv6":                   true,
+		"AlwaysUseFirewall":             true,
 		"NatExternalIPs":                true,
 		"CustomDNSAddress":              true,
 		"ExtraIFaceBlacklist":           true,
@@ -252,6 +256,7 @@ func TestCLIFlags_MappedToSetConfig(t *testing.T) {
 		"block-lan-access":                  "BlockLanAccess",
 		"block-inbound":                     "BlockInbound",
 		"disable-ipv6":                      "DisableIpv6",
+		"always-use-firewall":               "AlwaysUseFirewall",
 		"enable-lazy-connection":            "LazyConnectionEnabled",
 		"external-ip-map":                   "NatExternalIPs",
 		"dns-resolver-address":              "CustomDNSAddress",
