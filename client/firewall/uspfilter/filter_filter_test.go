@@ -32,7 +32,7 @@ func TestPeerACLFiltering(t *testing.T) {
 		},
 	}
 
-	manager, err := Create(ifaceMock, false, flowLogger, iface.DefaultMTU)
+	manager, err := Create(ifaceMock, false, false, flowLogger, iface.DefaultMTU)
 	require.NoError(t, err)
 	require.NotNil(t, manager)
 
@@ -557,7 +557,7 @@ func TestPeerACLFilteringIPv6(t *testing.T) {
 		},
 	}
 
-	manager, err := Create(ifaceMock, false, flowLogger, iface.DefaultMTU)
+	manager, err := Create(ifaceMock, false, false, flowLogger, iface.DefaultMTU)
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, manager.Close(nil)) })
 
@@ -800,7 +800,7 @@ func setupRoutedManager(tb testing.TB, network string) *Manager {
 		},
 	}
 
-	manager, err := Create(ifaceMock, false, flowLogger, iface.DefaultMTU)
+	manager, err := Create(ifaceMock, false, false, flowLogger, iface.DefaultMTU)
 	require.NoError(tb, err)
 	require.NoError(tb, manager.EnableRouting())
 	require.NotNil(tb, manager)
@@ -1646,7 +1646,7 @@ func TestRouteACLSet(t *testing.T) {
 		},
 	}
 
-	manager, err := Create(ifaceMock, false, flowLogger, iface.DefaultMTU)
+	manager, err := Create(ifaceMock, false, false, flowLogger, iface.DefaultMTU)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		require.NoError(t, manager.Close(nil))

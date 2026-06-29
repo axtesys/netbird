@@ -15,13 +15,13 @@ import (
 )
 
 // NewFirewall creates a firewall manager instance
-func NewFirewall(iface IFaceMapper, _ *statemanager.Manager, flowLogger nftypes.FlowLogger, disableServerRoutes bool, mtu uint16) (firewall.Manager, error) {
+func NewFirewall(iface IFaceMapper, _ *statemanager.Manager, flowLogger nftypes.FlowLogger, disableServerRoutes bool, alwaysUseFirewall bool, mtu uint16) (firewall.Manager, error) {
 	if !iface.IsUserspaceBind() {
 		return nil, fmt.Errorf("not implemented for this OS: %s", runtime.GOOS)
 	}
 
 	// use userspace packet filtering firewall
-	fm, err := uspfilter.Create(iface, disableServerRoutes, flowLogger, mtu)
+	fm, err := uspfilter.Create(iface, disableServerRoutes, alwaysUseFirewall, flowLogger, mtu)
 	if err != nil {
 		return nil, err
 	}

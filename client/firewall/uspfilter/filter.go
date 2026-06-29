@@ -115,6 +115,9 @@ type Manager struct {
 	netstack bool
 	// indicates whether we forward local traffic to the native stack
 	localForwarding bool
+	// indicates whether we always run firewall/ACL checks and then pass routed
+	// traffic to the native stack, regardless of routing/native-router settings
+	alwaysUseFirewall bool
 
 	localipmanager *localIPManager
 
@@ -184,16 +187,16 @@ func (d *decoder) decodePacket(data []byte) error {
 }
 
 // Create userspace firewall manager constructor
-func Create(iface common.IFaceMapper, disableServerRoutes bool, flowLogger nftypes.FlowLogger, mtu uint16) (*Manager, error) {
-	return create(iface, nil, disableServerRoutes, flowLogger, mtu)
+func Create(iface common.IFaceMapper, disableServerRoutes bool, alwaysUseFirewall bool, flowLogger nftypes.FlowLogger, mtu uint16) (*Manager, error) {
+	return create(iface, nil, disableServerRoutes, alwaysUseFirewall, flowLogger, mtu)
 }
 
-func CreateWithNativeFirewall(iface common.IFaceMapper, nativeFirewall firewall.Manager, disableServerRoutes bool, flowLogger nftypes.FlowLogger, mtu uint16) (*Manager, error) {
+func CreateWithNativeFirewall(iface common.IFaceMapper, nativeFirewall firewall.Manager, disableServerRoutes bool, alwaysUseFirewall bool, flowLogger nftypes.FlowLogger, mtu uint16) (*Manager, error) {
 	if nativeFirewall == nil {
 		return nil, errors.New("native firewall is nil")
 	}
 
-	mgr, err := create(iface, nativeFirewall, disableServerRoutes, flowLogger, mtu)
+	mgr, err := create(iface, nativeFirewall, disableServerRoutes, alwaysUseFirewall, flowLogger, mtu)
 	if err != nil {
 		return nil, err
 	}
@@ -231,7 +234,7 @@ func parseCreateEnv() (bool, bool, bool) {
 	return disableConntrack, enableLocalForwarding, disableMSSClamping
 }
 
-func create(iface common.IFaceMapper, nativeFirewall firewall.Manager, disableServerRoutes bool, flowLogger nftypes.FlowLogger, mtu uint16) (*Manager, error) {
+func create(iface common.IFaceMapper, nativeFirewall firewall.Manager, disableServerRoutes bool, alwaysUseFirewall bool, flowLogger nftypes.FlowLogger, mtu uint16) (*Manager, error) {
 	disableConntrack, enableLocalForwarding, disableMSSClamping := parseCreateEnv()
 
 	m := &Manager{
@@ -261,6 +264,7 @@ func create(iface common.IFaceMapper, nativeFirewall firewall.Manager, disableSe
 		wgIface:             iface,
 		localipmanager:      newLocalIPManager(),
 		disableServerRoutes: disableServerRoutes,
+		alwaysUseFirewall:   alwaysUseFirewall,
 		stateful:            !disableConntrack,
 		logger:              nblog.NewFromLogrus(log.StandardLogger()),
 		flowLogger:          flowLogger,
@@ -1190,6 +1194,15 @@ func (m *Manager) handleRoutedTraffic(d *decoder, srcIP, dstIP netip.Addr, packe
 			RxBytes:   uint64(size),
 		})
 		return true
+	}
+
+	// With always-use-firewall, route ACL checks run in userspace but the packet
+	// is then handed to the native stack rather than the userspace forwarder, so
+	// the host firewall inspects it. Only meaningful with a real OS stack — in
+	// netstack mode there is none, so fall back to the forwarder.
+	if m.alwaysUseFirewall && !m.netstack {
+		m.trackInbound(d, srcIP, dstIP, nil, size)
+		return false
 	}
 
 	// Let forwarder handle the packet if it passed route ACLs

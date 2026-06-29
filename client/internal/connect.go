@@ -590,6 +590,7 @@ func createEngineConfig(key wgtypes.Key, config *profilemanager.Config, peerConf
 
 		DisableClientRoutes: config.DisableClientRoutes,
 		DisableServerRoutes: config.DisableServerRoutes || config.BlockInbound,
+		AlwaysUseFirewall:   config.AlwaysUseFirewall,
 		DisableDNS:          config.DisableDNS,
 		DisableFirewall:     config.DisableFirewall,
 		BlockLANAccess:      config.BlockLANAccess,

@@ -45,7 +45,7 @@ func TestTracePacket(t *testing.T) {
 			},
 		}
 
-		m, err := Create(ifaceMock, false, flowLogger, iface.DefaultMTU)
+		m, err := Create(ifaceMock, false, false, flowLogger, iface.DefaultMTU)
 		require.NoError(t, err)
 
 		if !statefulMode {
