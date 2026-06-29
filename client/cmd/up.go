@@ -475,6 +475,10 @@ func setupSetConfigReq(customDNSAddressConverted []byte, cmd *cobra.Command, pro
 		req.BlockInbound = &blockInbound
 	}
 
+	if cmd.Flag(alwaysUseFirewallFlag).Changed {
+		req.AlwaysUseFirewall = &alwaysUseFirewall
+	}
+
 	if cmd.Flag(disableIPv6Flag).Changed {
 		req.DisableIpv6 = &disableIPv6
 	}
@@ -592,6 +596,10 @@ func setupConfig(customDNSAddressConverted []byte, cmd *cobra.Command, configFil
 		ic.BlockInbound = &blockInbound
 	}
 
+	if cmd.Flag(alwaysUseFirewallFlag).Changed {
+		ic.AlwaysUseFirewall = &alwaysUseFirewall
+	}
+
 	if cmd.Flag(disableIPv6Flag).Changed {
 		ic.DisableIPv6 = &disableIPv6
 	}
@@ -705,6 +713,10 @@ func setupLoginRequest(providedSetupKey string, customDNSAddressConverted []byte
 
 	if cmd.Flag(blockInboundFlag).Changed {
 		loginRequest.BlockInbound = &blockInbound
+	}
+
+	if cmd.Flag(alwaysUseFirewallFlag).Changed {
+		loginRequest.AlwaysUseFirewall = &alwaysUseFirewall
 	}
 
 	if cmd.Flag(disableIPv6Flag).Changed {
