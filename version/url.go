@@ -1,5 +1,6 @@
 package version
 
 const (
-	downloadURL = "https://app.netbird.io/install"
+	// AXTESYS CHANGE: human-facing install page on axtesys infra.
+	downloadURL = "https://netbird.axtesys.it/install"
 )

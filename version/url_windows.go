@@ -6,8 +6,9 @@ import (
 )
 
 const (
-	urlWinExe    = "https://pkgs.netbird.io/windows/x64"
-	urlWinExeArm = "https://pkgs.netbird.io/windows/arm64"
+	// AXTESYS CHANGE: axtesys pkg host, normalized os/arch names.
+	urlWinExe    = "https://netbird.axtesys.it/pkgs/windows/amd64"
+	urlWinExeArm = "https://netbird.axtesys.it/pkgs/windows/arm64"
 )
 
 var regKeyAppPath = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\Netbird"

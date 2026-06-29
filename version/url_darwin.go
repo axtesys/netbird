@@ -6,8 +6,9 @@ import (
 )
 
 const (
-	urlMacIntel = "https://pkgs.netbird.io/macos/amd64"
-	urlMacM1M2  = "https://pkgs.netbird.io/macos/arm64"
+	// AXTESYS CHANGE: axtesys pkg host, normalized os/arch names.
+	urlMacIntel = "https://netbird.axtesys.it/pkgs/darwin/amd64"
+	urlMacM1M2  = "https://netbird.axtesys.it/pkgs/darwin/arm64"
 )
 
 // DownloadUrl return with the proper download link
