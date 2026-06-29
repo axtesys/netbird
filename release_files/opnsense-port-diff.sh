@@ -1,35 +1,50 @@
 #!/bin/bash
 #
-# FreeBSD Port Diff Generator for NetBird
+# OPNsense Port Diff Generator for the axtesys NetBird fork
 #
-# This script generates the diff file required for submitting a FreeBSD port update.
-# It works on macOS, Linux, and FreeBSD by fetching files from FreeBSD cgit and
-# computing checksums from the Go module proxy.
+# Generates the security/netbird port diff (Makefile + distinfo) for a new
+# version, against the OPNsense ports tree. The CI uploads the resulting diff as
+# an artifact; it is hand-carried to the internal OPNsense build node, which
+# builds the port from it (see MAINTENANCE).
 #
-# Usage: ./freebsd-port-diff.sh [new_version]
-# Example: ./freebsd-port-diff.sh 0.60.7
+# Usage: ./opnsense-port-diff.sh [new_version]
+# Example: ./opnsense-port-diff.sh 0.73.2-axt
 #
-# If no version is provided, it fetches the latest from GitHub.
+# If no version is provided, it fetches the latest tag from GitHub.
+#
+# ⚠️ GO_MODULE / Go-proxy caveat (verify on the build node):
+#   This script bumps DISTVERSION + GO_MODULE and computes distinfo checksums by
+#   pulling the module .mod/.zip from the public Go proxy. The fork's go.mod
+#   module path is still `github.com/netbirdio/netbird`, so proxy.golang.org will
+#   NOT serve `github.com/axtesys/netbird` (path mismatch / private repo). That
+#   means either GO_MODULE must stay `netbirdio/netbird` (matching go.mod) with
+#   only the source repo pointed at axtesys, or the build node regenerates
+#   distinfo itself (`make makesum`) and these computed checksums are scaffold
+#   only. The org rename below preserves the fork's prior behaviour verbatim;
+#   confirm which mechanism your build node actually relies on before trusting
+#   the generated distinfo.
 
 set -e
 
-GITHUB_REPO="netbirdio/netbird"
-PORTS_CGIT_BASE="https://cgit.freebsd.org/ports/plain/security/netbird"
-GO_PROXY="https://proxy.golang.org/github.com/netbirdio/netbird/@v"
+GITHUB_REPO="axtesys/netbird"
+PORTS_CGIT_BASE="https://raw.githubusercontent.com/opnsense/ports/refs/heads/master/security/netbird"
+GO_PROXY="https://proxy.golang.org/github.com/axtesys/netbird/@v"
 OUTPUT_DIR="${OUTPUT_DIR:-.}"
 AWK_FIRST_FIELD='{print $1}'
 
 fetch_all_tags() {
+    # Fetch tags from GitHub tags page (no rate limiting, no auth needed).
+    # The trailing `-k4,4r` keeps the "-axt" prerelease suffix sorted so the
+    # newest axtesys release is selected (not the upstream base tag).
     curl -sL "https://github.com/${GITHUB_REPO}/tags" 2>/dev/null | \
-        grep -oE '/releases/tag/v[0-9]+\.[0-9]+\.[0-9]+([^"]+)?' | \
-        grep -iv 'rc' | \
+        grep -oE '/releases/tag/v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?' | \
         sed 's/.*\/v//' | \
-        sort -u -V
+        sort -u -t. -k1,1n -k2,2n -k3,3n -k4,4r
     return 0
 }
 
 fetch_current_ports_version() {
-    echo "Fetching current version from FreeBSD ports..." >&2
+    echo "Fetching current version from OPNsense ports..." >&2
     curl -sL "${PORTS_CGIT_BASE}/Makefile" 2>/dev/null | \
         grep -E "^DISTVERSION=" | \
         sed 's/DISTVERSION=[[:space:]]*//' | \
@@ -104,15 +119,18 @@ generate_new_makefile() {
 
     # Check if old version had PORTREVISION
     if echo "$old_makefile" | grep -q "^PORTREVISION="; then
-        # Remove PORTREVISION line and update DISTVERSION
+        # Remove PORTREVISION line and update DISTVERSION and GO_MODULE
         echo "$old_makefile" | \
             sed "s/^DISTVERSION=.*/DISTVERSION=	${new_version}/" | \
+            sed "s|^GO_MODULE=.*|GO_MODULE=        github.com/${GITHUB_REPO}|" | \
             grep -v "^PORTREVISION="
     else
-        # Just update DISTVERSION
+        # Just update DISTVERSION and GO_MODULE
         echo "$old_makefile" | \
-            sed "s/^DISTVERSION=.*/DISTVERSION=	${new_version}/"
+            sed "s/^DISTVERSION=.*/DISTVERSION=	${new_version}/" | \
+            sed "s|^GO_MODULE=.*|GO_MODULE=        github.com/${GITHUB_REPO}|"
     fi
+
     return 0
 }
 
@@ -122,10 +140,10 @@ NEW_VERSION="${1:-}"
 # Auto-detect versions if not provided
 OLD_VERSION=$(fetch_current_ports_version)
 if [[ -z "$OLD_VERSION" ]]; then
-    echo "Error: Could not fetch current version from FreeBSD ports" >&2
+    echo "Error: Could not fetch current version from OPNsense ports" >&2
     exit 1
 fi
-echo "Current FreeBSD ports version: ${OLD_VERSION}" >&2
+echo "Current OPNsense ports version: ${OLD_VERSION}" >&2
 
 if [[ -z "$NEW_VERSION" ]]; then
     NEW_VERSION=$(fetch_latest_github_release)
@@ -144,14 +162,14 @@ fi
 echo "" >&2
 
 # Fetch current files
-echo "Fetching current Makefile from FreeBSD ports..." >&2
+echo "Fetching current Makefile from OPNsense ports..." >&2
 OLD_MAKEFILE=$(fetch_ports_file "Makefile")
 if [[ -z "$OLD_MAKEFILE" ]]; then
     echo "Error: Could not fetch Makefile" >&2
     exit 1
 fi
 
-echo "Fetching current distinfo from FreeBSD ports..." >&2
+echo "Fetching current distinfo from OPNsense ports..." >&2
 OLD_DISTINFO=$(fetch_ports_file "distinfo")
 if [[ -z "$OLD_DISTINFO" ]]; then
     echo "Error: Could not fetch distinfo" >&2
@@ -204,14 +222,8 @@ cat "$OUTPUT_FILE"
 echo ""
 echo "========================================="
 echo ""
-echo "Next steps:"
-echo "1. Review the diff above"
-echo "2. Submit to https://bugs.freebsd.org/bugzilla/"
-echo "3. Use ./freebsd-port-issue-body.sh to generate the issue content"
+echo "Next steps (internal):"
+echo "1. Review the diff above."
+echo "2. Hand-carry ${OUTPUT_FILE} to the OPNsense build node."
+echo "3. Apply it against the node's security/netbird port and build the package."
 echo ""
-echo "For FreeBSD testing (optional but recommended):"
-echo "  cd /usr/ports/security/netbird"
-echo "  patch < ${OUTPUT_FILE}"
-echo "  make stage && make stage-qa && make package && make install"
-echo "  netbird status"
-echo "  make deinstall"
