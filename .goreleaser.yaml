@@ -253,8 +253,6 @@ dockers_v2:
        - client/netbird-entrypoint.sh
      platforms:
        - linux/amd64
-       - linux/arm64
-       - linux/arm/6
      annotations:
        "org.opencontainers.image.created": "{{.Date}}"
        "org.opencontainers.image.title": "{{.ProjectName}}"
@@ -276,71 +274,6 @@ dockers_v2:
        - client/netbird-entrypoint.sh
      platforms:
        - linux/amd64
-       - linux/arm64
-       - linux/arm/6
-     annotations:
-       "org.opencontainers.image.created": "{{.Date}}"
-       "org.opencontainers.image.title": "{{.ProjectName}}"
-       "org.opencontainers.image.version": "{{.Version}}"
-       "org.opencontainers.image.revision": "{{.FullCommit}}"
-       "org.opencontainers.image.source": "{{.GitURL}}"
-       "maintainer": "dev@netbird.io"
-   - id: relay
-     disable: "{{ .Env.SKIP_DOCKER_PUSH }}"
-     ids:
-       - netbird-relay
-     images:
-       - ghcr.io/axtesys/netbird/relay
-     tags:
-       - "{{ .Version }}"
-       - "{{ if eq .Env.SKIP_PUBLISH \"false\" }}latest{{ end }}"
-     dockerfile: relay/Dockerfile
-     platforms:
-       - linux/amd64
-       - linux/arm64
-       - linux/arm
-     annotations:
-       "org.opencontainers.image.created": "{{.Date}}"
-       "org.opencontainers.image.title": "{{.ProjectName}}"
-       "org.opencontainers.image.version": "{{.Version}}"
-       "org.opencontainers.image.revision": "{{.FullCommit}}"
-       "org.opencontainers.image.source": "{{.GitURL}}"
-       "maintainer": "dev@netbird.io"
-   - id: signal
-     disable: "{{ .Env.SKIP_DOCKER_PUSH }}"
-     ids:
-       - netbird-signal
-     images:
-       - ghcr.io/axtesys/netbird/signal
-     tags:
-       - "{{ .Version }}"
-       - "{{ if eq .Env.SKIP_PUBLISH \"false\" }}latest{{ end }}"
-     dockerfile: signal/Dockerfile
-     platforms:
-       - linux/amd64
-       - linux/arm64
-       - linux/arm
-     annotations:
-       "org.opencontainers.image.created": "{{.Date}}"
-       "org.opencontainers.image.title": "{{.ProjectName}}"
-       "org.opencontainers.image.version": "{{.Version}}"
-       "org.opencontainers.image.revision": "{{.FullCommit}}"
-       "org.opencontainers.image.source": "{{.GitURL}}"
-       "maintainer": "dev@netbird.io"
-   - id: management
-     disable: "{{ .Env.SKIP_DOCKER_PUSH }}"
-     ids:
-       - netbird-mgmt
-     images:
-       - ghcr.io/axtesys/netbird/management
-     tags:
-       - "{{ .Version }}"
-       - "{{ if eq .Env.SKIP_PUBLISH \"false\" }}latest{{ end }}"
-     dockerfile: management/Dockerfile
-     platforms:
-       - linux/amd64
-       - linux/arm64
-       - linux/arm
      annotations:
        "org.opencontainers.image.created": "{{.Date}}"
        "org.opencontainers.image.title": "{{.ProjectName}}"
@@ -360,8 +293,6 @@ dockers_v2:
      dockerfile: upload-server/Dockerfile
      platforms:
        - linux/amd64
-       - linux/arm64
-       - linux/arm
      annotations:
        "org.opencontainers.image.created": "{{.Date}}"
        "org.opencontainers.image.title": "{{.ProjectName}}"
@@ -381,8 +312,6 @@ dockers_v2:
      dockerfile: combined/Dockerfile
      platforms:
        - linux/amd64
-       - linux/arm64
-       - linux/arm
      annotations:
        "org.opencontainers.image.created": "{{.Date}}"
        "org.opencontainers.image.title": "{{.ProjectName}}"
@@ -402,8 +331,6 @@ dockers_v2:
      dockerfile: proxy/Dockerfile
      platforms:
        - linux/amd64
-       - linux/arm64
-       - linux/arm
      annotations:
        "org.opencontainers.image.created": "{{.Date}}"
        "org.opencontainers.image.title": "{{.ProjectName}}"
