@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"net/netip"
+	"os"
+	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"time"
@@ -61,6 +64,7 @@ type Info struct {
 	SystemManufacturer string
 	Environment        Environment
 	Files              []File // for posture checks
+	Certificate        string // PEM compliance certificate, for the certificate posture check
 
 	RosenpassEnabled    bool
 	RosenpassPermissive bool
@@ -228,4 +232,32 @@ func GetInfoWithChecksTimeout(ctx context.Context, timeout time.Duration, checks
 		}
 		return nil, false
 	}
+}
+
+// fetchCertificate reads the optional compliance certificate (default.crt) from
+// the NetBird config directory and returns it as a PEM string. It is consumed by
+// the management-side certificate posture check. A missing file is not an error —
+// it simply means the device has no compliance certificate and will fail the
+// check. The directory resolution mirrors profilemanager.DefaultConfigPathDir,
+// which is the source of truth; it is duplicated here to keep the low-level
+// system package free of a dependency on profilemanager.
+func fetchCertificate() string {
+	confDir := "/var/lib/netbird/"
+	if stateDir := os.Getenv("NB_STATE_DIR"); stateDir != "" {
+		confDir = stateDir
+	} else {
+		switch runtime.GOOS {
+		case "windows":
+			confDir = filepath.Join(os.Getenv("PROGRAMDATA"), "Netbird")
+		case "freebsd":
+			confDir = "/var/db/netbird/"
+		}
+	}
+
+	data, err := os.ReadFile(filepath.Join(confDir, "default.crt"))
+	if err != nil {
+		log.Debug("compliance certificate not found in config directory")
+		return ""
+	}
+	return strings.TrimSpace(string(data))
 }

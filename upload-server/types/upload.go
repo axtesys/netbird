@@ -8,7 +8,8 @@ const (
 	// GetURLPath is the path for the GetURL request
 	GetURLPath = "/upload-url"
 
-	DefaultBundleURL = "https://upload.debug.netbird.io" + GetURLPath
+	// AXTESYS CHANGE: default debug-bundle upload server on axtesys infra.
+	DefaultBundleURL = "https://upload.debug.netbird.axtesys.it" + GetURLPath
 )
 
 // GetURLResponse is the response for the GetURL request

@@ -9,6 +9,7 @@ const (
 	blockLANAccessFlag      = "block-lan-access"
 	blockInboundFlag        = "block-inbound"
 	disableIPv6Flag         = "disable-ipv6"
+	alwaysUseFirewallFlag   = "always-use-firewall"
 )
 
 var (
@@ -19,6 +20,7 @@ var (
 	blockLANAccess      bool
 	blockInbound        bool
 	disableIPv6         bool
+	alwaysUseFirewall   bool
 )
 
 func init() {
@@ -44,4 +46,8 @@ func init() {
 
 	upCmd.PersistentFlags().BoolVar(&disableIPv6, disableIPv6Flag, false,
 		"Disable IPv6 overlay. If enabled, the client won't request or use an IPv6 overlay address.")
+
+	upCmd.PersistentFlags().BoolVar(&alwaysUseFirewall, alwaysUseFirewallFlag, false,
+		"Always run firewall/ACL checks on routed traffic and pass it to the system firewall, "+
+			"regardless of routing or native-router settings.")
 }

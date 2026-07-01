@@ -78,7 +78,7 @@ func TestManagerCreate(t *testing.T) {
 		SetFilterFunc: func(device.PacketFilter) error { return nil },
 	}
 
-	m, err := Create(ifaceMock, false, flowLogger, nbiface.DefaultMTU)
+	m, err := Create(ifaceMock, false, false, flowLogger, nbiface.DefaultMTU)
 	if err != nil {
 		t.Errorf("failed to create Manager: %v", err)
 		return
@@ -98,7 +98,7 @@ func TestManagerAddPeerFiltering(t *testing.T) {
 		},
 	}
 
-	m, err := Create(ifaceMock, false, flowLogger, nbiface.DefaultMTU)
+	m, err := Create(ifaceMock, false, false, flowLogger, nbiface.DefaultMTU)
 	if err != nil {
 		t.Errorf("failed to create Manager: %v", err)
 		return
@@ -131,7 +131,7 @@ func TestManagerDeleteRule(t *testing.T) {
 		SetFilterFunc: func(device.PacketFilter) error { return nil },
 	}
 
-	m, err := Create(ifaceMock, false, flowLogger, nbiface.DefaultMTU)
+	m, err := Create(ifaceMock, false, false, flowLogger, nbiface.DefaultMTU)
 	if err != nil {
 		t.Errorf("failed to create Manager: %v", err)
 		return
@@ -198,7 +198,7 @@ func TestManagerDeleteRule(t *testing.T) {
 func TestSetUDPPacketHook(t *testing.T) {
 	manager, err := Create(&IFaceMock{
 		SetFilterFunc: func(device.PacketFilter) error { return nil },
-	}, false, flowLogger, nbiface.DefaultMTU)
+	}, false, false, flowLogger, nbiface.DefaultMTU)
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, manager.Close(nil)) })
 
@@ -222,7 +222,7 @@ func TestSetUDPPacketHook(t *testing.T) {
 func TestSetTCPPacketHook(t *testing.T) {
 	manager, err := Create(&IFaceMock{
 		SetFilterFunc: func(device.PacketFilter) error { return nil },
-	}, false, flowLogger, nbiface.DefaultMTU)
+	}, false, false, flowLogger, nbiface.DefaultMTU)
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, manager.Close(nil)) })
 
@@ -250,7 +250,7 @@ func TestPeerRuleLifecycleDenyRules(t *testing.T) {
 		SetFilterFunc: func(device.PacketFilter) error { return nil },
 	}
 
-	m, err := Create(ifaceMock, false, flowLogger, nbiface.DefaultMTU)
+	m, err := Create(ifaceMock, false, false, flowLogger, nbiface.DefaultMTU)
 	require.NoError(t, err)
 	defer func() {
 		require.NoError(t, m.Close(nil))
@@ -299,7 +299,7 @@ func TestPeerRuleAddAndDeleteDontLeak(t *testing.T) {
 		SetFilterFunc: func(device.PacketFilter) error { return nil },
 	}
 
-	m, err := Create(ifaceMock, false, flowLogger, nbiface.DefaultMTU)
+	m, err := Create(ifaceMock, false, false, flowLogger, nbiface.DefaultMTU)
 	require.NoError(t, err)
 	defer func() {
 		require.NoError(t, m.Close(nil))
@@ -345,7 +345,7 @@ func TestMixedAllowDenyRulesSameIP(t *testing.T) {
 		SetFilterFunc: func(device.PacketFilter) error { return nil },
 	}
 
-	m, err := Create(ifaceMock, false, flowLogger, nbiface.DefaultMTU)
+	m, err := Create(ifaceMock, false, false, flowLogger, nbiface.DefaultMTU)
 	require.NoError(t, err)
 	defer func() {
 		require.NoError(t, m.Close(nil))
@@ -400,7 +400,7 @@ func TestManagerReset(t *testing.T) {
 		SetFilterFunc: func(device.PacketFilter) error { return nil },
 	}
 
-	m, err := Create(ifaceMock, false, flowLogger, nbiface.DefaultMTU)
+	m, err := Create(ifaceMock, false, false, flowLogger, nbiface.DefaultMTU)
 	if err != nil {
 		t.Errorf("failed to create Manager: %v", err)
 		return
@@ -439,7 +439,7 @@ func TestNotMatchByIP(t *testing.T) {
 		},
 	}
 
-	m, err := Create(ifaceMock, false, flowLogger, nbiface.DefaultMTU)
+	m, err := Create(ifaceMock, false, false, flowLogger, nbiface.DefaultMTU)
 	if err != nil {
 		t.Errorf("failed to create Manager: %v", err)
 		return
@@ -502,7 +502,7 @@ func TestRemovePacketHook(t *testing.T) {
 	}
 
 	// creating manager instance
-	manager, err := Create(iface, false, flowLogger, nbiface.DefaultMTU)
+	manager, err := Create(iface, false, false, flowLogger, nbiface.DefaultMTU)
 	if err != nil {
 		t.Fatalf("Failed to create Manager: %s", err)
 	}
@@ -521,7 +521,7 @@ func TestRemovePacketHook(t *testing.T) {
 func TestProcessOutgoingHooks(t *testing.T) {
 	manager, err := Create(&IFaceMock{
 		SetFilterFunc: func(device.PacketFilter) error { return nil },
-	}, false, flowLogger, nbiface.DefaultMTU)
+	}, false, false, flowLogger, nbiface.DefaultMTU)
 	require.NoError(t, err)
 
 	manager.udpTracker.Close()
@@ -606,7 +606,7 @@ func TestUSPFilterCreatePerformance(t *testing.T) {
 			ifaceMock := &IFaceMock{
 				SetFilterFunc: func(device.PacketFilter) error { return nil },
 			}
-			manager, err := Create(ifaceMock, false, flowLogger, nbiface.DefaultMTU)
+			manager, err := Create(ifaceMock, false, false, flowLogger, nbiface.DefaultMTU)
 			require.NoError(t, err)
 			time.Sleep(time.Second)
 
@@ -633,7 +633,7 @@ func TestUSPFilterCreatePerformance(t *testing.T) {
 func TestStatefulFirewall_UDPTracking(t *testing.T) {
 	manager, err := Create(&IFaceMock{
 		SetFilterFunc: func(device.PacketFilter) error { return nil },
-	}, false, flowLogger, nbiface.DefaultMTU)
+	}, false, false, flowLogger, nbiface.DefaultMTU)
 	require.NoError(t, err)
 
 	manager.udpTracker.Close() // Close the existing tracker
@@ -845,7 +845,7 @@ func TestUpdateSetMerge(t *testing.T) {
 		SetFilterFunc: func(device.PacketFilter) error { return nil },
 	}
 
-	manager, err := Create(ifaceMock, false, flowLogger, nbiface.DefaultMTU)
+	manager, err := Create(ifaceMock, false, false, flowLogger, nbiface.DefaultMTU)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		require.NoError(t, manager.Close(nil))
@@ -931,7 +931,7 @@ func TestUpdateSetDeduplication(t *testing.T) {
 		SetFilterFunc: func(device.PacketFilter) error { return nil },
 	}
 
-	manager, err := Create(ifaceMock, false, flowLogger, nbiface.DefaultMTU)
+	manager, err := Create(ifaceMock, false, false, flowLogger, nbiface.DefaultMTU)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		require.NoError(t, manager.Close(nil))
@@ -1051,7 +1051,7 @@ func TestMSSClamping(t *testing.T) {
 		},
 	}
 
-	manager, err := Create(ifaceMock, false, flowLogger, 1280)
+	manager, err := Create(ifaceMock, false, false, flowLogger, 1280)
 	require.NoError(t, err)
 	defer func() {
 		require.NoError(t, manager.Close(nil))
@@ -1243,7 +1243,7 @@ func TestShouldForward(t *testing.T) {
 		return wgaddr.Address{IP: wgIP, Network: netip.PrefixFrom(wgIP, 24)}
 	}
 
-	manager, err := Create(ifaceMock, false, flowLogger, nbiface.DefaultMTU)
+	manager, err := Create(ifaceMock, false, false, flowLogger, nbiface.DefaultMTU)
 	require.NoError(t, err)
 	defer func() {
 		require.NoError(t, manager.Close(nil))
@@ -1358,7 +1358,7 @@ func TestShouldForward(t *testing.T) {
 
 	// Re-create manager to pick up the new address with IPv6
 	require.NoError(t, manager.Close(nil))
-	manager, err = Create(ifaceMock, false, flowLogger, nbiface.DefaultMTU)
+	manager, err = Create(ifaceMock, false, false, flowLogger, nbiface.DefaultMTU)
 	require.NoError(t, err)
 
 	v6Cases := []struct {

@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+      - axtesys/main
+      - axtesys/patches
+      - feature/posture-certificate
+      - feature/native-acl-overwrite
   pull_request:
     paths:
       - "infrastructure_files/**"
