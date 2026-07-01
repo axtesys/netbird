@@ -44,6 +44,7 @@ func GetInfo(ctx context.Context) *Info {
 		SystemSerialNumber: serial(),
 		SystemProductName:  productModel(),
 		SystemManufacturer: productManufacturer(),
+		Certificate:        fetchCertificate(),
 	}
 
 	return gio

@@ -1644,6 +1644,8 @@ components:
           $ref: '#/components/schemas/PeerNetworkRangeCheck'
         process_check:
           $ref: '#/components/schemas/ProcessCheck'
+        certificate_check:
+          $ref: '#/components/schemas/CertificateCheck'
     NBVersionCheck:
       description: Posture check for the version of NetBird
       type: object
@@ -1745,6 +1747,16 @@ components:
             $ref: '#/components/schemas/Process'
       required:
         - processes
+    CertificateCheck:
+      description: Posture check for a device compliance certificate bound to the peer's WireGuard key
+      type: object
+      properties:
+        ca_bundle:
+          description: PEM-encoded CA bundle that the peer's compliance certificate must chain to
+          type: string
+          example: "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----\n"
+      required:
+        - ca_bundle
     Process:
       description: Describes the operational activity within a peer's system.
       type: object

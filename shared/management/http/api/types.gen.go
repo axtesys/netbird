@@ -1639,6 +1639,12 @@ type BypassResponse struct {
 	PeerId string `json:"peer_id"`
 }
 
+// CertificateCheck Posture check for a device compliance certificate bound to the peer's WireGuard key
+type CertificateCheck struct {
+	// CaBundle PEM-encoded CA bundle that the peer's compliance certificate must chain to
+	CaBundle string `json:"ca_bundle"`
+}
+
 // CheckoutResponse defines model for CheckoutResponse.
 type CheckoutResponse struct {
 	// SessionId The unique identifier for the checkout session.
@@ -1650,6 +1656,9 @@ type CheckoutResponse struct {
 
 // Checks List of objects that perform the actual checks
 type Checks struct {
+	// CertificateCheck Posture check for a device compliance certificate bound to the peer's WireGuard key
+	CertificateCheck *CertificateCheck `json:"certificate_check,omitempty"`
+
 	// GeoLocationCheck Posture check for geo location
 	GeoLocationCheck *GeoLocationCheck `json:"geo_location_check,omitempty"`
 

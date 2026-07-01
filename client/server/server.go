@@ -465,6 +465,7 @@ func (s *Server) setConfigInputFromRequest(msg *proto.SetConfigRequest) (profile
 	config.DisableNotifications = msg.DisableNotifications
 	config.LazyConnectionEnabled = msg.LazyConnectionEnabled
 	config.BlockInbound = msg.BlockInbound
+	config.AlwaysUseFirewall = msg.AlwaysUseFirewall
 	config.DisableIPv6 = msg.DisableIpv6
 	config.EnableSSHRoot = msg.EnableSSHRoot
 	config.EnableSSHSFTP = msg.EnableSSHSFTP
@@ -1649,6 +1650,7 @@ func (s *Server) GetConfig(ctx context.Context, req *proto.GetConfigRequest) (*p
 		RosenpassPermissive:           cfg.RosenpassPermissive,
 		LazyConnectionEnabled:         cfg.LazyConnectionEnabled,
 		BlockInbound:                  cfg.BlockInbound,
+		AlwaysUseFirewall:             cfg.AlwaysUseFirewall,
 		DisableNotifications:          disableNotifications,
 		NetworkMonitor:                networkMonitor,
 		DisableDns:                    disableDNS,

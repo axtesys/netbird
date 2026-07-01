@@ -170,7 +170,7 @@ func BenchmarkCoreFiltering(b *testing.B) {
 				// Create manager and basic setup
 				manager, _ := Create(&IFaceMock{
 					SetFilterFunc: func(device.PacketFilter) error { return nil },
-				}, false, flowLogger, iface.DefaultMTU)
+				}, false, false, flowLogger, iface.DefaultMTU)
 				defer b.Cleanup(func() {
 					require.NoError(b, manager.Close(nil))
 				})
@@ -210,7 +210,7 @@ func BenchmarkStateScaling(b *testing.B) {
 		b.Run(fmt.Sprintf("conns_%d", count), func(b *testing.B) {
 			manager, _ := Create(&IFaceMock{
 				SetFilterFunc: func(device.PacketFilter) error { return nil },
-			}, false, flowLogger, iface.DefaultMTU)
+			}, false, false, flowLogger, iface.DefaultMTU)
 			b.Cleanup(func() {
 				require.NoError(b, manager.Close(nil))
 			})
@@ -253,7 +253,7 @@ func BenchmarkEstablishmentOverhead(b *testing.B) {
 		b.Run(sc.name, func(b *testing.B) {
 			manager, _ := Create(&IFaceMock{
 				SetFilterFunc: func(device.PacketFilter) error { return nil },
-			}, false, flowLogger, iface.DefaultMTU)
+			}, false, false, flowLogger, iface.DefaultMTU)
 			b.Cleanup(func() {
 				require.NoError(b, manager.Close(nil))
 			})
@@ -411,7 +411,7 @@ func BenchmarkRoutedNetworkReturn(b *testing.B) {
 		b.Run(sc.name, func(b *testing.B) {
 			manager, _ := Create(&IFaceMock{
 				SetFilterFunc: func(device.PacketFilter) error { return nil },
-			}, false, flowLogger, iface.DefaultMTU)
+			}, false, false, flowLogger, iface.DefaultMTU)
 			b.Cleanup(func() {
 				require.NoError(b, manager.Close(nil))
 			})
@@ -538,7 +538,7 @@ func BenchmarkLongLivedConnections(b *testing.B) {
 
 			manager, _ := Create(&IFaceMock{
 				SetFilterFunc: func(device.PacketFilter) error { return nil },
-			}, false, flowLogger, iface.DefaultMTU)
+			}, false, false, flowLogger, iface.DefaultMTU)
 			defer b.Cleanup(func() {
 				require.NoError(b, manager.Close(nil))
 			})
@@ -621,7 +621,7 @@ func BenchmarkShortLivedConnections(b *testing.B) {
 
 			manager, _ := Create(&IFaceMock{
 				SetFilterFunc: func(device.PacketFilter) error { return nil },
-			}, false, flowLogger, iface.DefaultMTU)
+			}, false, false, flowLogger, iface.DefaultMTU)
 			defer b.Cleanup(func() {
 				require.NoError(b, manager.Close(nil))
 			})
@@ -732,7 +732,7 @@ func BenchmarkParallelLongLivedConnections(b *testing.B) {
 
 			manager, _ := Create(&IFaceMock{
 				SetFilterFunc: func(device.PacketFilter) error { return nil },
-			}, false, flowLogger, iface.DefaultMTU)
+			}, false, false, flowLogger, iface.DefaultMTU)
 			defer b.Cleanup(func() {
 				require.NoError(b, manager.Close(nil))
 			})
@@ -812,7 +812,7 @@ func BenchmarkParallelShortLivedConnections(b *testing.B) {
 
 			manager, _ := Create(&IFaceMock{
 				SetFilterFunc: func(device.PacketFilter) error { return nil },
-			}, false, flowLogger, iface.DefaultMTU)
+			}, false, false, flowLogger, iface.DefaultMTU)
 			defer b.Cleanup(func() {
 				require.NoError(b, manager.Close(nil))
 			})
@@ -1016,7 +1016,7 @@ func BenchmarkMSSClamping(b *testing.B) {
 		b.Run(sc.name, func(b *testing.B) {
 			manager, err := Create(&IFaceMock{
 				SetFilterFunc: func(device.PacketFilter) error { return nil },
-			}, false, flowLogger, iface.DefaultMTU)
+			}, false, false, flowLogger, iface.DefaultMTU)
 			require.NoError(b, err)
 			defer func() {
 				require.NoError(b, manager.Close(nil))
@@ -1081,7 +1081,7 @@ func BenchmarkMSSClampingOverhead(b *testing.B) {
 		b.Run(sc.name, func(b *testing.B) {
 			manager, err := Create(&IFaceMock{
 				SetFilterFunc: func(device.PacketFilter) error { return nil },
-			}, false, flowLogger, iface.DefaultMTU)
+			}, false, false, flowLogger, iface.DefaultMTU)
 			require.NoError(b, err)
 			defer func() {
 				require.NoError(b, manager.Close(nil))
@@ -1136,7 +1136,7 @@ func BenchmarkMSSClampingMemory(b *testing.B) {
 		b.Run(sc.name, func(b *testing.B) {
 			manager, err := Create(&IFaceMock{
 				SetFilterFunc: func(device.PacketFilter) error { return nil },
-			}, false, flowLogger, iface.DefaultMTU)
+			}, false, false, flowLogger, iface.DefaultMTU)
 			require.NoError(b, err)
 			defer func() {
 				require.NoError(b, manager.Close(nil))

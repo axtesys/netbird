@@ -135,6 +135,7 @@ type EngineConfig struct {
 
 	DisableClientRoutes bool
 	DisableServerRoutes bool
+	AlwaysUseFirewall   bool
 	DisableDNS          bool
 	DisableFirewall     bool
 	BlockLANAccess      bool
@@ -653,7 +654,7 @@ func (e *Engine) createFirewall() error {
 	firewalld.SetParentContext(e.ctx)
 
 	var err error
-	e.firewall, err = firewall.NewFirewall(e.wgInterface, e.stateManager, e.flowManager.GetLogger(), e.config.DisableServerRoutes, e.config.MTU)
+	e.firewall, err = firewall.NewFirewall(e.wgInterface, e.stateManager, e.flowManager.GetLogger(), e.config.DisableServerRoutes, e.config.AlwaysUseFirewall, e.config.MTU)
 	if err != nil {
 		return fmt.Errorf("create firewall manager: %w", err)
 	}
