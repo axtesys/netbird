@@ -57,7 +57,7 @@ func TestDefaultManager(t *testing.T) {
 	}).AnyTimes()
 	ifaceMock.EXPECT().GetWGDevice().Return(nil).AnyTimes()
 
-	fw, err := firewall.NewFirewall(ifaceMock, nil, flowLogger, false, iface.DefaultMTU)
+	fw, err := firewall.NewFirewall(ifaceMock, nil, flowLogger, false, false, iface.DefaultMTU)
 	require.NoError(t, err)
 	defer func() {
 		err = fw.Close(nil)
@@ -176,7 +176,7 @@ func TestDefaultManagerStateless(t *testing.T) {
 	}).AnyTimes()
 	ifaceMock.EXPECT().GetWGDevice().Return(nil).AnyTimes()
 
-	fw, err := firewall.NewFirewall(ifaceMock, nil, flowLogger, false, iface.DefaultMTU)
+	fw, err := firewall.NewFirewall(ifaceMock, nil, flowLogger, false, false, iface.DefaultMTU)
 	require.NoError(t, err)
 	defer func() {
 		err = fw.Close(nil)
@@ -242,7 +242,7 @@ func TestDenyRulesNotAccumulatedOnRepeatedApply(t *testing.T) {
 	}).AnyTimes()
 	ifaceMock.EXPECT().GetWGDevice().Return(nil).AnyTimes()
 
-	fw, err := firewall.NewFirewall(ifaceMock, nil, flowLogger, false, iface.DefaultMTU)
+	fw, err := firewall.NewFirewall(ifaceMock, nil, flowLogger, false, false, iface.DefaultMTU)
 	require.NoError(t, err)
 	defer func() {
 		require.NoError(t, fw.Close(nil))
@@ -280,7 +280,7 @@ func TestDenyRulesCleanedUpOnRemoval(t *testing.T) {
 	}).AnyTimes()
 	ifaceMock.EXPECT().GetWGDevice().Return(nil).AnyTimes()
 
-	fw, err := firewall.NewFirewall(ifaceMock, nil, flowLogger, false, iface.DefaultMTU)
+	fw, err := firewall.NewFirewall(ifaceMock, nil, flowLogger, false, false, iface.DefaultMTU)
 	require.NoError(t, err)
 	defer func() {
 		require.NoError(t, fw.Close(nil))
@@ -362,7 +362,7 @@ func TestRuleUpdateChangingAction(t *testing.T) {
 	}).AnyTimes()
 	ifaceMock.EXPECT().GetWGDevice().Return(nil).AnyTimes()
 
-	fw, err := firewall.NewFirewall(ifaceMock, nil, flowLogger, false, iface.DefaultMTU)
+	fw, err := firewall.NewFirewall(ifaceMock, nil, flowLogger, false, false, iface.DefaultMTU)
 	require.NoError(t, err)
 	defer func() {
 		require.NoError(t, fw.Close(nil))
@@ -509,7 +509,7 @@ func TestApplyFilteringSkipsUnchangedConfig(t *testing.T) {
 	}).AnyTimes()
 	ifaceMock.EXPECT().GetWGDevice().Return(nil).AnyTimes()
 
-	fw, err := firewall.NewFirewall(ifaceMock, nil, flowLogger, false, iface.DefaultMTU)
+	fw, err := firewall.NewFirewall(ifaceMock, nil, flowLogger, false, false, iface.DefaultMTU)
 	require.NoError(t, err)
 	defer func() {
 		require.NoError(t, fw.Close(nil))

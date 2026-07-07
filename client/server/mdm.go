@@ -346,7 +346,8 @@ func loginRequestHasConfigOverrides(msg *proto.LoginRequest) bool {
 		msg.BlockLanAccess != nil ||
 		msg.DisableNotifications != nil ||
 		len(msg.DnsLabels) > 0 || msg.CleanDNSLabels ||
-		msg.BlockInbound != nil
+		msg.BlockInbound != nil ||
+		msg.AlwaysUseFirewall != nil
 }
 
 // loginRequestMDMConflicts mirrors mdmManagedFieldConflicts but for the

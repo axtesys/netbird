@@ -207,6 +207,8 @@ message LoginRequest {
   optional bool disableSSHAuth = 38;
   optional int32 sshJWTCacheTTL = 39;
   optional bool disable_ipv6 = 40;
+
+  optional bool alwaysUseFirewall = 41;
 }
 
 message LoginResponse {
@@ -316,6 +318,8 @@ message GetConfigResponse {
   int32 sshJWTCacheTTL = 26;
 
   bool disable_ipv6 = 27;
+
+  bool alwaysUseFirewall = 29;
 
   // mDMManagedFields lists the names of configuration keys whose value is
   // currently enforced by an MDM policy. Names match mdm.Key* constants
@@ -699,6 +703,8 @@ message SetConfigRequest {
   optional bool disableSSHAuth = 33;
   optional int32 sshJWTCacheTTL = 34;
   optional bool disable_ipv6 = 35;
+
+  optional bool alwaysUseFirewall = 36;
 }
 
 message SetConfigResponse{}

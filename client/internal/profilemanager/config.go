@@ -33,12 +33,14 @@ const (
 	// managementLegacyPortString is the port that was used before by the Management gRPC server.
 	// It is used for backward compatibility now.
 	managementLegacyPortString = "33073"
-	// DefaultManagementURL points to the NetBird's cloud management endpoint
-	DefaultManagementURL = "https://api.netbird.io:443"
+	// DefaultManagementURL points to the axtesys control plane.
+	// AXTESYS CHANGE: default to the axtesys management endpoint.
+	DefaultManagementURL = "https://netbird.axtesys.it:443"
 	// oldDefaultManagementURL points to the NetBird's old cloud management endpoint
 	oldDefaultManagementURL = "https://api.wiretrustee.com:443"
-	// DefaultAdminURL points to NetBird's cloud management console
-	DefaultAdminURL = "https://app.netbird.io:443"
+	// DefaultAdminURL points to the axtesys management console.
+	// AXTESYS CHANGE: default to the axtesys admin endpoint.
+	DefaultAdminURL = "https://netbird.axtesys.it:443"
 )
 
 // mgmProber is the subset of management client needed for URL migration probes.
@@ -95,6 +97,7 @@ type ConfigInput struct {
 	DisableFirewall     *bool
 	BlockLANAccess      *bool
 	BlockInbound        *bool
+	AlwaysUseFirewall   *bool
 	DisableIPv6         *bool
 
 	DisableNotifications *bool
@@ -136,6 +139,7 @@ type Config struct {
 	DisableFirewall     bool
 	BlockLANAccess      bool
 	BlockInbound        bool
+	AlwaysUseFirewall   bool
 	DisableIPv6         bool
 
 	DisableNotifications *bool
@@ -578,6 +582,16 @@ func (config *Config) apply(input ConfigInput) (updated bool, err error) {
 			log.Infof("allowing inbound connections")
 		}
 		config.BlockInbound = *input.BlockInbound
+		updated = true
+	}
+
+	if input.AlwaysUseFirewall != nil && *input.AlwaysUseFirewall != config.AlwaysUseFirewall {
+		if *input.AlwaysUseFirewall {
+			log.Infof("enabling always use of firewall")
+		} else {
+			log.Infof("disabling always use of firewall")
+		}
+		config.AlwaysUseFirewall = *input.AlwaysUseFirewall
 		updated = true
 	}
 

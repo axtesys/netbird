@@ -244,8 +244,7 @@ dockers_v2:
      ids:
        - netbird
      images:
-       - netbirdio/netbird
-       - ghcr.io/netbirdio/netbird
+       - ghcr.io/axtesys/netbird/netbird
      tags:
        - "{{ .Version }}"
        - "{{ if eq .Env.SKIP_PUBLISH \"false\" }}latest{{ end }}"
@@ -254,8 +253,6 @@ dockers_v2:
        - client/netbird-entrypoint.sh
      platforms:
        - linux/amd64
-       - linux/arm64
-       - linux/arm/6
      annotations:
        "org.opencontainers.image.created": "{{.Date}}"
        "org.opencontainers.image.title": "{{.ProjectName}}"
@@ -268,8 +265,7 @@ dockers_v2:
      ids:
        - netbird
      images:
-       - netbirdio/netbird
-       - ghcr.io/netbirdio/netbird
+       - ghcr.io/axtesys/netbird/netbird
      tags:
        - "v{{ .Version }}-rootless"
        - "{{ if eq .Env.SKIP_PUBLISH \"false\" }}latest{{ end }}"
@@ -278,74 +274,6 @@ dockers_v2:
        - client/netbird-entrypoint.sh
      platforms:
        - linux/amd64
-       - linux/arm64
-       - linux/arm/6
-     annotations:
-       "org.opencontainers.image.created": "{{.Date}}"
-       "org.opencontainers.image.title": "{{.ProjectName}}"
-       "org.opencontainers.image.version": "{{.Version}}"
-       "org.opencontainers.image.revision": "{{.FullCommit}}"
-       "org.opencontainers.image.source": "{{.GitURL}}"
-       "maintainer": "dev@netbird.io"
-   - id: relay
-     disable: "{{ .Env.SKIP_DOCKER_PUSH }}"
-     ids:
-       - netbird-relay
-     images:
-       - netbirdio/relay
-       - ghcr.io/netbirdio/relay
-     tags:
-       - "{{ .Version }}"
-       - "{{ if eq .Env.SKIP_PUBLISH \"false\" }}latest{{ end }}"
-     dockerfile: relay/Dockerfile
-     platforms:
-       - linux/amd64
-       - linux/arm64
-       - linux/arm
-     annotations:
-       "org.opencontainers.image.created": "{{.Date}}"
-       "org.opencontainers.image.title": "{{.ProjectName}}"
-       "org.opencontainers.image.version": "{{.Version}}"
-       "org.opencontainers.image.revision": "{{.FullCommit}}"
-       "org.opencontainers.image.source": "{{.GitURL}}"
-       "maintainer": "dev@netbird.io"
-   - id: signal
-     disable: "{{ .Env.SKIP_DOCKER_PUSH }}"
-     ids:
-       - netbird-signal
-     images:
-       - netbirdio/signal
-       - ghcr.io/netbirdio/signal
-     tags:
-       - "{{ .Version }}"
-       - "{{ if eq .Env.SKIP_PUBLISH \"false\" }}latest{{ end }}"
-     dockerfile: signal/Dockerfile
-     platforms:
-       - linux/amd64
-       - linux/arm64
-       - linux/arm
-     annotations:
-       "org.opencontainers.image.created": "{{.Date}}"
-       "org.opencontainers.image.title": "{{.ProjectName}}"
-       "org.opencontainers.image.version": "{{.Version}}"
-       "org.opencontainers.image.revision": "{{.FullCommit}}"
-       "org.opencontainers.image.source": "{{.GitURL}}"
-       "maintainer": "dev@netbird.io"
-   - id: management
-     disable: "{{ .Env.SKIP_DOCKER_PUSH }}"
-     ids:
-       - netbird-mgmt
-     images:
-       - netbirdio/management
-       - ghcr.io/netbirdio/management
-     tags:
-       - "{{ .Version }}"
-       - "{{ if eq .Env.SKIP_PUBLISH \"false\" }}latest{{ end }}"
-     dockerfile: management/Dockerfile
-     platforms:
-       - linux/amd64
-       - linux/arm64
-       - linux/arm
      annotations:
        "org.opencontainers.image.created": "{{.Date}}"
        "org.opencontainers.image.title": "{{.ProjectName}}"
@@ -358,16 +286,13 @@ dockers_v2:
      ids:
        - netbird-upload
      images:
-       - netbirdio/upload
-       - ghcr.io/netbirdio/upload
+       - ghcr.io/axtesys/netbird/upload
      tags:
        - "{{ .Version }}"
        - "{{ if eq .Env.SKIP_PUBLISH \"false\" }}latest{{ end }}"
      dockerfile: upload-server/Dockerfile
      platforms:
        - linux/amd64
-       - linux/arm64
-       - linux/arm
      annotations:
        "org.opencontainers.image.created": "{{.Date}}"
        "org.opencontainers.image.title": "{{.ProjectName}}"
@@ -380,16 +305,13 @@ dockers_v2:
      ids:
        - netbird-server
      images:
-       - netbirdio/netbird-server
-       - ghcr.io/netbirdio/netbird-server
+       - ghcr.io/axtesys/netbird/netbird-server
      tags:
        - "{{ .Version }}"
        - "{{ if eq .Env.SKIP_PUBLISH \"false\" }}latest{{ end }}"
      dockerfile: combined/Dockerfile
      platforms:
        - linux/amd64
-       - linux/arm64
-       - linux/arm
      annotations:
        "org.opencontainers.image.created": "{{.Date}}"
        "org.opencontainers.image.title": "{{.ProjectName}}"
@@ -402,16 +324,13 @@ dockers_v2:
      ids:
        - netbird-proxy
      images:
-       - netbirdio/reverse-proxy
-       - ghcr.io/netbirdio/reverse-proxy
+       - ghcr.io/axtesys/netbird/reverse-proxy
      tags:
        - "{{ .Version }}"
        - "{{ if eq .Env.SKIP_PUBLISH \"false\" }}latest{{ end }}"
      dockerfile: proxy/Dockerfile
      platforms:
        - linux/amd64
-       - linux/arm64
-       - linux/arm
      annotations:
        "org.opencontainers.image.created": "{{.Date}}"
        "org.opencontainers.image.title": "{{.ProjectName}}"
@@ -425,8 +344,8 @@ brews:
       - default
     skip_upload: "{{ .Env.SKIP_PUBLISH }}"
     repository:
-      owner: netbirdio
-      name: homebrew-tap
+      owner: axtesys
+      name: netbird-homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     commit_author:
       name: Netbird
@@ -438,25 +357,8 @@ brews:
     test: |
       system "#{bin}/{{ .ProjectName	}} version"
 
-uploads:
-  - name: debian
-    skip: "{{ .Env.SKIP_PUBLISH }}"
-    ids:
-      - netbird_deb
-    mode: archive
-    target: https://pkgs.wiretrustee.com/debian/pool/{{ .ArtifactName }};deb.distribution=stable;deb.component=main;deb.architecture={{ if .Arm }}armhf{{ else }}{{ .Arch }}{{ end }};deb.package=
-    username: dev@wiretrustee.com
-    method: PUT
-
-  - name: yum
-    skip: "{{ .Env.SKIP_PUBLISH }}"
-    ids:
-      - netbird_rpm
-    mode: archive
-    target: https://pkgs.wiretrustee.com/yum/{{ .Arch }}{{ if .Arm }}{{ .Arm }}{{ end }}
-    username: dev@wiretrustee.com
-    method: PUT
-
+# AXTESYS CHANGE: no debian/yum uploads to NetBird infra; deb/rpm artifacts are
+# published to axtesys infra by Jenkins from the GitHub release.
 checksum:
   extra_files:
     - glob: ./infrastructure_files/getting-started-with-zitadel.sh

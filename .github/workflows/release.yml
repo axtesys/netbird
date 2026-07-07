@@ -5,7 +5,8 @@ on:
     tags:
       - "v*"
     branches:
-      - main
+      # AXTESYS CHANGE: our integration branch (was upstream's "main").
+      - axtesys/main
   pull_request:
 
 env:
@@ -22,8 +23,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  release_freebsd_port:
-    name: "FreeBSD Port / Build & Test"
+  # AXTESYS CHANGE: generate the OPNsense port diff and upload it as an artifact.
+  # axtesys runs NetBird on OPNsense firewalls and cannot submit a fork to the
+  # stock FreeBSD ports tree, so the upstream FreeBSD-submission scripts and the
+  # FreeBSD-VM build test are dropped. The diff is hand-carried to the internal
+  # OPNsense build node, which builds the package from it.
+  opnsense_port:
+    name: "OPNsense Port / Generate Diff"
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
@@ -31,11 +37,8 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Generate FreeBSD port diff
-        run: bash -x release_files/freebsd-port-diff.sh
-
-      - name: Generate FreeBSD port issue body
-        run: bash -x release_files/freebsd-port-issue-body.sh
+      - name: Generate OPNsense port diff
+        run: bash -x release_files/opnsense-port-diff.sh
 
       - name: Check if diff was generated
         id: check_diff
@@ -53,80 +56,26 @@ jobs:
         run: |
           VERSION=$(ls netbird-*.diff | sed 's/netbird-\(.*\)\.diff/\1/')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Generated files for version: $VERSION"
+          echo "Generated diff for version: $VERSION"
           cat netbird-*.diff
 
-      - name: Read Go version from go.mod
-        id: goversion
-        run: echo "version=$(awk '/^go / {print $2}' go.mod)" >> "$GITHUB_OUTPUT"
-
-      - name: Test FreeBSD port
-        if: steps.check_diff.outputs.diff_exists == 'true'
-        env:
-          GO_VERSION: ${{ steps.goversion.outputs.version }}
-        uses: vmactions/freebsd-vm@b84ab5559b5a1bb4b8ee2737d2506a16e1737636 # v1.4.8
-        with:
-          usesh: true
-          copyback: false
-          release: "15.0"
-          envs: "GO_VERSION"
-          prepare: |
-            # Install required packages
-            pkg install -y git curl portlint
-
-            # Install Go for building
-            GO_TARBALL="go${GO_VERSION}.freebsd-amd64.tar.gz"
-            GO_URL="https://go.dev/dl/$GO_TARBALL"
-            curl -LO "$GO_URL"
-            tar -C /usr/local -xzf "$GO_TARBALL"
-
-            # Clone ports tree (shallow, only what we need)
-            git clone --depth 1 --filter=blob:none https://git.FreeBSD.org/ports.git /usr/ports
-            cd /usr/ports
-
-          run: |
-            set -e -x
-            export PATH=$PATH:/usr/local/go/bin
-
-            # Find the diff file
-            echo "Finding diff file..."
-            DIFF_FILE=$(find $PWD -name "netbird-*.diff" -type f 2>/dev/null | head -1)
-            echo "Found: $DIFF_FILE"
-
-            if [[ -z "$DIFF_FILE" ]]; then
-              echo "ERROR: Could not find diff file"
-              find ~ -name "*.diff" -type f 2>/dev/null || true
-              exit 1
-            fi
-
-            # Apply the generated diff from /usr/ports (diff has a/security/netbird/... paths)
-            cd /usr/ports
-            patch -p1 -V none < "$DIFF_FILE"
-
-            # Show patched Makefile
-            version=$(cat security/netbird/Makefile | grep -E '^DISTVERSION=' | awk '{print $NF}')
-
-            cd /usr/ports/security/netbird
-            export BATCH=yes
-            make package
-            pkg add ./work/pkg/netbird-*.pkg
-
-            netbird version | grep "$version"
-
-            echo "FreeBSD port test completed successfully!"
-
-      - name: Upload FreeBSD port files
+      - name: Upload OPNsense port diff
         if: steps.check_diff.outputs.diff_exists == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
         with:
-          name: freebsd-port-files
-          path: |
-            ./netbird-*-issue.txt
-            ./netbird-*.diff
+          name: opnsense-port-diff
+          path: ./netbird-*.diff
           retention-days: 30
 
   release:
-    runs-on: ubuntu-24.04-8-core
+    # AXTESYS CHANGE: upstream uses the `ubuntu-24.04-8-core` larger runner, which
+    # is a paid/org-provisioned GitHub feature the fork doesn't have — the job
+    # would queue forever. Run on the standard hosted runner (slower, but works).
+    runs-on: ubuntu-latest
+    # AXTESYS CHANGE: GITHUB_TOKEN needs these to push GHCR images + the release.
+    permissions:
+      contents: write
+      packages: write
     outputs:
       release_artifact_url: ${{ steps.upload_release.outputs.artifact-url }}
       linux_packages_artifact_url: ${{ steps.upload_linux_packages.outputs.artifact-url }}
@@ -152,17 +101,12 @@ jobs:
       - name: Set build vars
         if: ${{ startsWith(github.ref, 'refs/tags/v') }}
         run: |
-          if [[ "x-${{ steps.semver_parser.outputs.prerelease }}" == "x-" && "x-${{ github.repository }}" == "x-netbirdio/netbird" ]]; then
-            echo "x-${{ github.repository }}" 
-            echo "x-${{ steps.semver_parser.outputs.prerelease }}"
+          # AXTESYS CHANGE: publish to axtesys infra (Homebrew tap + GHCR) on tag
+          # builds. Our release tags carry the "-axt" prerelease suffix, so we do
+          # NOT gate on an empty semver prerelease the way upstream does.
+          if [[ "x-${{ github.repository }}" == "x-axtesys/netbird" ]]; then
             echo "SKIP_PUBLISH=false" >> $GITHUB_ENV
-          else
-            echo "x-${{ github.repository }}" 
-            echo "x-${{ steps.semver_parser.outputs.prerelease }}"
-          fi
-          
-          if [[ "x-${{ github.repository }}" != "x-netbirdio/netbird" ]]; then
-            echo "SKIP_DOCKER_PUSH=true" >> $GITHUB_ENV
+            echo "SKIP_DOCKER_PUSH=false" >> $GITHUB_ENV
           fi
 
       - name: Set up Go
@@ -189,29 +133,21 @@ jobs:
         uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 #v4.1.0
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 #v4.1.0
-      - name: Login to Docker hub
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
-        with:
-          username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_TOKEN }}
+      # AXTESYS CHANGE: no Docker Hub login (we publish only to GHCR), and GHCR
+      # auth uses the built-in GITHUB_TOKEN (see job-level packages: write).
       - name: Log in to the GitHub container registry
         if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.CI_DOCKER_PUSH_GITHUB_TOKEN }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Install OS build dependencies
         run: sudo apt update && sudo apt install -y -q gcc-arm-linux-gnueabihf gcc-aarch64-linux-gnu
 
-      - name: Decode GPG signing key
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-        env:
-          GPG_RPM_PRIVATE_KEY: ${{ secrets.GPG_RPM_PRIVATE_KEY }}
-        run: |
-          echo "$GPG_RPM_PRIVATE_KEY" | base64 -d > /tmp/gpg-rpm-signing-key.asc
-          echo "GPG_RPM_KEY_FILE=/tmp/gpg-rpm-signing-key.asc" >> $GITHUB_ENV
+      # AXTESYS CHANGE: axtesys ships unsigned artifacts; the RPM GPG
+      # decode/verify steps are removed. GoReleaser's nfpm rpm.signature.key_file
+      # self-disables when GPG_RPM_KEY_FILE is unset.
 
       - name: Install goversioninfo
         run: go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@233067e
@@ -226,35 +162,26 @@ jobs:
           version: ${{ env.GORELEASER_VER }}
           args: release --clean ${{ env.flags }}
         env:
+          # AXTESYS CHANGE: no debian/yum upload secrets, no RPM GPG (unsigned).
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
-          UPLOAD_DEBIAN_SECRET: ${{ secrets.PKG_UPLOAD_SECRET }}
-          UPLOAD_YUM_SECRET: ${{ secrets.PKG_UPLOAD_SECRET }}
-          GPG_RPM_KEY_FILE: ${{ env.GPG_RPM_KEY_FILE }}
-          NFPM_NETBIRD_RPM_PASSPHRASE: ${{ secrets.GPG_RPM_PASSPHRASE }}
           SKIP_PUBLISH: ${{ env.SKIP_PUBLISH }}
           SKIP_DOCKER_PUSH: ${{ env.SKIP_DOCKER_PUSH }}
-      - name: Verify RPM signatures
-        run: |
-          docker run --rm -v $(pwd)/dist:/dist fedora:41 bash -c '
-            dnf install -y -q rpm-sign curl >/dev/null 2>&1
-            curl -sSL https://pkgs.netbird.io/yum/repodata/repomd.xml.key -o /tmp/rpm-pub.key
-            rpm --import /tmp/rpm-pub.key
-            echo "=== Verifying RPM signatures ==="
-            for rpm_file in /dist/*amd64*.rpm; do
-              [ -f "$rpm_file" ] || continue
-              echo "--- $(basename $rpm_file) ---"
-              rpm -K "$rpm_file"
-            done
-          '
-      - name: Clean up GPG key
-        if: always()
-        run: rm -f /tmp/gpg-rpm-signing-key.asc
+
+      # AXTESYS CHANGE: GoReleaser publishes the CLI formula but not the UI cask.
+      # We ship upstream's signed macOS UI, so on tag builds push a
+      # matching netbird-ui cask to the tap. Skips if upstream has no signed UI.
+      - name: Update Homebrew UI cask
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+        run: bash release_files/update-ui-cask.sh
+
       - name: Tag and push images (amd64 only)
         id: tag_and_push_images
         if: |
           (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) ||
-          (github.event_name == 'push' && github.ref == 'refs/heads/main')
+          (github.event_name == 'push' && github.ref == 'refs/heads/axtesys/main')
         run: |
           set -euo pipefail
 
@@ -272,7 +199,7 @@ jobs:
             package="${package#*/}"
             package="${package%%:*}"
             encoded_package="${package//\//%2F}"
-            echo "https://github.com/orgs/netbirdio/packages/container/package/${encoded_package}"
+            echo "https://github.com/orgs/axtesys/packages/container/package/${encoded_package}"
           }
 
           image_refs=()
@@ -367,13 +294,10 @@ jobs:
       - name: Set build vars
         if: ${{ startsWith(github.ref, 'refs/tags/v') }}
         run: |
-          if [[ "x-${{ steps.semver_parser.outputs.prerelease }}" == "x-" && "x-${{ github.repository }}" == "x-netbirdio/netbird" ]]; then
-            echo "x-${{ github.repository }}" 
-            echo "x-${{ steps.semver_parser.outputs.prerelease }}"
+          # AXTESYS CHANGE: publish on tag builds for axtesys/netbird (our release
+          # tags carry the "-axt" prerelease suffix, so no empty-prerelease gate).
+          if [[ "x-${{ github.repository }}" == "x-axtesys/netbird" ]]; then
             echo "SKIP_PUBLISH=false" >> $GITHUB_ENV
-          else
-            echo "x-${{ github.repository }}" 
-            echo "x-${{ steps.semver_parser.outputs.prerelease }}"
           fi
 
       - name: Set up Go
@@ -400,13 +324,7 @@ jobs:
       - name: Install dependencies
         run: sudo apt update && sudo apt install -y -q libappindicator3-dev gir1.2-appindicator3-0.1 libxxf86vm-dev gcc-mingw-w64-x86-64
 
-      - name: Decode GPG signing key
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-        env:
-          GPG_RPM_PRIVATE_KEY: ${{ secrets.GPG_RPM_PRIVATE_KEY }}
-        run: |
-          echo "$GPG_RPM_PRIVATE_KEY" | base64 -d > /tmp/gpg-rpm-signing-key.asc
-          echo "GPG_RPM_KEY_FILE=/tmp/gpg-rpm-signing-key.asc" >> $GITHUB_ENV
+      # AXTESYS CHANGE: unsigned artifacts — no RPM GPG decode.
 
       - name: Install LLVM-MinGW for ARM64 cross-compilation
         run: |
@@ -428,29 +346,10 @@ jobs:
           version: ${{ env.GORELEASER_VER }}
           args: release --config .goreleaser_ui.yaml --clean ${{ env.flags }}
         env:
+          # AXTESYS CHANGE: no upload secrets / RPM GPG (unsigned).
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
-          UPLOAD_DEBIAN_SECRET: ${{ secrets.PKG_UPLOAD_SECRET }}
-          UPLOAD_YUM_SECRET: ${{ secrets.PKG_UPLOAD_SECRET }}
-          GPG_RPM_KEY_FILE: ${{ env.GPG_RPM_KEY_FILE }}
-          NFPM_NETBIRD_UI_RPM_PASSPHRASE: ${{ secrets.GPG_RPM_PASSPHRASE }}
           SKIP_PUBLISH: ${{ env.SKIP_PUBLISH }}
-      - name: Verify RPM signatures
-        run: |
-          docker run --rm -v $(pwd)/dist:/dist fedora:41 bash -c '
-            dnf install -y -q rpm-sign curl >/dev/null 2>&1
-            curl -sSL https://pkgs.netbird.io/yum/repodata/repomd.xml.key -o /tmp/rpm-pub.key
-            rpm --import /tmp/rpm-pub.key
-            echo "=== Verifying RPM signatures ==="
-            for rpm_file in /dist/*.rpm; do
-              [ -f "$rpm_file" ] || continue
-              echo "--- $(basename $rpm_file) ---"
-              rpm -K "$rpm_file"
-            done
-          '
-      - name: Clean up GPG key
-        if: always()
-        run: rm -f /tmp/gpg-rpm-signing-key.asc
       - name: upload non tags for debug purposes
         id: upload_release_ui
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
@@ -506,9 +405,14 @@ jobs:
           retention-days: 3
 
   test_windows_installer:
-    name: "Windows Installer / Build Test"
+    name: "Windows Installer / Build & Publish"
     runs-on: windows-2022
     needs: [release, release_ui]
+    # AXTESYS CHANGE: on tag builds this job uploads the NSIS .exe and WiX .msi
+    # to the GitHub release (mirrored to Pulp at /pkgs/windows/{arch}/), so it
+    # needs write access to release assets like the release job above.
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -628,7 +532,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "makensis failed with exit code $LASTEXITCODE" }
 
       - name: Rename NSIS installer
-        run: mv netbird-installer.exe netbird_installer_test_windows_${{ matrix.arch }}.exe
+        run: mv netbird-installer.exe netbird-installer_windows_${{ matrix.arch }}.exe
 
       - name: Install WiX
         run: |
@@ -638,17 +542,32 @@ jobs:
       - name: Build MSI installer
         env:
           NETBIRD_VERSION: "${{ steps.semver_parser.outputs.fullversion }}"
-        run: wix build -arch ${{ matrix.arch == 'amd64' && 'x64' || 'arm64' }} -ext WixToolset.Util.wixext -o netbird_installer_test_windows_${{ matrix.arch }}.msi .\client\netbird.wxs -d ProcessorArchitecture=${{ matrix.arch == 'amd64' && 'x64' || 'arm64' }} -d ArchSuffix=${{ matrix.arch }}
+        run: wix build -arch ${{ matrix.arch == 'amd64' && 'x64' || 'arm64' }} -ext WixToolset.Util.wixext -o netbird-installer_windows_${{ matrix.arch }}.msi .\client\netbird.wxs -d ProcessorArchitecture=${{ matrix.arch == 'amd64' && 'x64' || 'arm64' }} -d ArchSuffix=${{ matrix.arch }}
 
       - name: Upload installer artifacts
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
         with:
-          name: windows-installer-test-${{ matrix.arch }}
+          name: windows-installer-${{ matrix.arch }}
           path: |
-            netbird_installer_test_windows_${{ matrix.arch }}.exe
-            netbird_installer_test_windows_${{ matrix.arch }}.msi
+            netbird-installer_windows_${{ matrix.arch }}.exe
+            netbird-installer_windows_${{ matrix.arch }}.msi
           retention-days: 3
+
+      # AXTESYS CHANGE: on tag builds, publish the installers to the GitHub
+      # release created by the release job (this job needs it). The internal
+      # GitHub->Pulp mirror then serves them at /pkgs/windows/{arch}/, matching
+      # the dashboard Windows setup tab.
+      - name: Publish installers to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.ref_name }}" `
+            "netbird-installer_windows_${{ matrix.arch }}.exe" `
+            "netbird-installer_windows_${{ matrix.arch }}.msi" `
+            --clobber
 
   comment_release_artifacts:
     name: Comment release artifacts
@@ -747,16 +666,18 @@ jobs:
               core.info(`Created release artifacts comment ${data.id}`);
             }
 
-  trigger_signer:
-    runs-on: ubuntu-latest
-    needs: [release, release_ui, release_ui_darwin, test_windows_installer]
-    if: startsWith(github.ref, 'refs/tags/')
-    steps:
-      - name: Trigger binaries sign pipelines
-        uses: benc-uk/workflow-dispatch@31e2b3319479a63f0ab15bf800eff9e913504e26 # v1.3.2
-        with:
-          workflow: Sign bin and installer
-          repo: netbirdio/sign-pipelines
-          ref: ${{ env.SIGN_PIPE_VER }}
-          token: ${{ secrets.SIGN_GITHUB_TOKEN }}
-          inputs: '{ "tag": "${{ github.ref }}", "skipRelease": false }'
+# AXTESYS CHANGE: no binary signing — axtesys cannot trigger NetBird's private
+# sign-pipelines and ships unsigned artifacts for its internal fleet.
+#  trigger_signer:
+#    runs-on: ubuntu-latest
+#    needs: [release, release_ui, release_ui_darwin, test_windows_installer]
+#    if: startsWith(github.ref, 'refs/tags/')
+#    steps:
+#      - name: Trigger binaries sign pipelines
+#        uses: benc-uk/workflow-dispatch@31e2b3319479a63f0ab15bf800eff9e913504e26 # v1.3.2
+#        with:
+#          workflow: Sign bin and installer
+#          repo: netbirdio/sign-pipelines
+#          ref: ${{ env.SIGN_PIPE_VER }}
+#          token: ${{ secrets.SIGN_GITHUB_TOKEN }}
+#          inputs: '{ "tag": "${{ github.ref }}", "skipRelease": false }'
